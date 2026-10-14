@@ -3,7 +3,8 @@
 import pygame
 import sys
 import json
-from planete import Planete
+import math
+from planete import Planete, CONSTANTE_GRAVITATION
 from vaisseau import Vaisseau
 
 global FPSCLOCK
@@ -11,6 +12,8 @@ FPS = 120
 WINDOWWIDTH = 1800
 WINDOWHEIGHT = 1600
 ARRIERE_PLAN = (42,17,51)
+
+SIMULATION_SPEED = 1.0
 
 
 class Quitte(Exception ):
@@ -59,15 +62,35 @@ def main():
     s_pers = pygame.Surface((WINDOWWIDTH, WINDOWHEIGHT), pygame.SRCALPHA)
     s_temp = pygame.Surface((WINDOWWIDTH, WINDOWHEIGHT), pygame.SRCALPHA)
 
-    etoile = Planete(50, 0, None, 0, (255, 255, 255))
-    planete = Planete(30, 150, etoile, 20, (0, 0, 255))
-    lune = Planete(10, 50, planete, 40, (200, 200, 200))
-    mars = Planete(18, 260, etoile, 12, (220, 90, 50))
-    jupiter = Planete(28, 380, etoile, 9, (210, 170, 120))
-    saturne = Planete(24, 490, etoile, 7, (230, 210, 150))
+    centre = (WINDOWWIDTH / 2, WINDOWHEIGHT / 2)
+    masse_etoile = 100000
+    vitesse_planete = math.sqrt(CONSTANTE_GRAVITATION * masse_etoile / 150)
+    vitesse_mars = math.sqrt(CONSTANTE_GRAVITATION * masse_etoile / 260)
+    vitesse_jupiter = math.sqrt(CONSTANTE_GRAVITATION * masse_etoile / 380)
+    vitesse_saturne = math.sqrt(CONSTANTE_GRAVITATION * masse_etoile / 490)
 
-    lune2 = Planete(6, 45, saturne, 60, (150, 150, 150))
-    lune3 = Planete(7, 35, mars, 80, (180, 180, 180))
+    etoile = Planete(50, 0, 0, masse_etoile, 0, (255, 255, 255),
+                     position_init=centre)
+    planete = Planete(30, vitesse_planete, math.pi / 2, 100, 0,
+                      (0, 0, 255), position_init=(centre[0] + 150, centre[1]))
+    lune = Planete(10, vitesse_planete + math.sqrt(100 / 50), math.pi / 2,
+                   1, 0, (200, 200, 200),
+                   position_init=(centre[0] + 200, centre[1]))
+    mars = Planete(18, vitesse_mars, math.pi / 2, 15, 0, (220, 90, 50),
+                   position_init=(centre[0] + 260, centre[1]))
+    jupiter = Planete(28, vitesse_jupiter, math.pi / 2, 300, 0,
+                      (210, 170, 120),
+                      position_init=(centre[0] + 380, centre[1]))
+    saturne = Planete(24, vitesse_saturne, math.pi / 2, 250, 0,
+                      (230, 210, 150),
+                      position_init=(centre[0] + 490, centre[1]))
+
+    lune2 = Planete(6, vitesse_saturne + math.sqrt(250 / 45), math.pi / 2,
+                    1, 0, (150, 150, 150),
+                    position_init=(centre[0] + 535, centre[1]))
+    lune3 = Planete(7, vitesse_mars + math.sqrt(15 / 35), math.pi / 2,
+                    1, 0, (180, 180, 180),
+                    position_init=(centre[0] + 295, centre[1]))
 
     univers = [etoile, planete, lune, mars, jupiter, saturne, lune2, lune3]
     
@@ -78,9 +101,12 @@ def main():
             handleEvents()
             drawApp(s_temp, s_pers, ecran, univers)
 
-            temps_ecoule = FPSCLOCK.tick(FPS)
-            for objet in univers:
-                objet.avance(temps_ecoule)
+            temps_ecoule = FPSCLOCK.tick(FPS) * SIMULATION_SPEED
+            nouvelles_positions = [
+                objet.calcule_pos(univers, temps_ecoule) for objet in univers
+            ]
+            for objet, position in zip(univers, nouvelles_positions):
+                objet.position = position
 
         except Quitte:
             break
