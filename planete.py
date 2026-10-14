@@ -3,7 +3,7 @@ import math
 
 class Planete:
 
-    def __init__(self, taille, rayon_orbite, poids,
+    def __init__(self, taille, rayon_orbite, astre_orbite,
                  v_angulaire, couleur, trace=False, phase=0):
         self.taille = taille
         self.rayon_orbite = rayon_orbite
