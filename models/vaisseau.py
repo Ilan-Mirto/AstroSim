@@ -1,5 +1,8 @@
 import pygame
 
+import constantes as const
+
+
 class Vaisseau:
 
     def __init__(self, pos, destinations, couleur, trace=False, sprite=None):
@@ -14,9 +17,9 @@ class Vaisseau:
             try:
                 with open(sprite) as sprite_file:
                     raw_sprite = pygame.image.load(sprite_file)
-                    self.sprite = \
-                        pygame.transform.smoothscale(raw_sprite, (80,80))
-            except Exception as error:
+                    self.sprite = pygame.transform.smoothscale(
+                        raw_sprite, const.VAISSEAU_TAILLE_SPRITE)
+            except Exception:
                 self.sprite = None
         else:
             self.sprite = None
@@ -27,11 +30,11 @@ class Vaisseau:
         dx, dy = destination.calcule_pos()
         x = (1 - self.vitesse) * x + self.vitesse * dx
         y = (1 - self.vitesse) * y + self.vitesse * dy
-        self.position = x,y
+        self.position = x, y
         distance = (x-dx)*(x-dx) + (y-dy)*(y-dy)
         if distance > self.derniere_distance:
-            self.vitesse += 0.01
-        if abs(x-dx) + abs(y-dy) < 1.0:
+            self.vitesse += const.VAISSEAU_PAS_VITESSE
+        if abs(x-dx) + abs(y-dy) < const.VAISSEAU_TOLERANCE_ARRIVEE:
             if len(self.destinations) > 1:
                 self.destinations = self.destinations[1:]
             self.vitesse = 0
@@ -40,16 +43,28 @@ class Vaisseau:
     def dessine(self, s_persistante, s_temp):
         x, y = self.position
         if self.sprite:
-            s_temp.blit(self.sprite, (x-40,y-40))
+            s_temp.blit(self.sprite,
+                        (x-const.VAISSEAU_DEMI_TAILLE_SPRITE,
+                         y-const.VAISSEAU_DEMI_TAILLE_SPRITE))
         else:
-            pygame.draw.rect(s_temp, self.couleur, (int(x)-20, int(y)-20, 40, 40))
-            pygame.draw.rect(s_temp, pygame.Color("white"), (int(x)-10, int(y)-10, 20, 20))
+            pygame.draw.rect(
+                s_temp, self.couleur,
+                (int(x)-const.VAISSEAU_DEMI_TAILLE,
+                 int(y)-const.VAISSEAU_DEMI_TAILLE,
+                 const.VAISSEAU_TAILLE, const.VAISSEAU_TAILLE))
+            pygame.draw.rect(
+                s_temp, pygame.Color("white"),
+                (int(x)-const.VAISSEAU_DEMI_TAILLE_CENTRE,
+                 int(y)-const.VAISSEAU_DEMI_TAILLE_CENTRE,
+                 const.VAISSEAU_TAILLE_CENTRE,
+                 const.VAISSEAU_TAILLE_CENTRE))
         if self.dessine_trajectoire:
             position = x, y
             for d in self.destinations:
                 dx, dy = d.calcule_pos()
-                pygame.draw.line(s_temp, self.couleur, position, (int(dx), int(dy)))
+                pygame.draw.line(s_temp, self.couleur,
+                                 position, (int(dx), int(dy)))
                 position = dx, dy
         if self.trace:
-            pygame.draw.circle(s_persistante, self.couleur, (int(x), int(y)), 1)
-    
+            pygame.draw.circle(s_persistante, self.couleur, (int(x), int(y)),
+                               const.RAYON_TRACE)
