@@ -69,7 +69,7 @@ class Planete:
         self.dir = math.atan2(vitesse_y, vitesse_x)
         return x + vitesse_x * dt_secondes, y + vitesse_y * dt_secondes
 
-    def dessine(self, s_persistante, s_temp):
+    def render(self, s_persistante, s_temp):
         x, y = self.calcule_pos()
         pygame.draw.circle(s_temp, self.couleur, (int(x), int(y)), self.taille)
         if self.trace:
@@ -99,3 +99,11 @@ class Planete:
             if self.masse >= autre.masse:
                 self.masse += const.MASSE_TRANSFEREE_PAR_COLLISION
                 autre.masse -= const.MASSE_TRANSFEREE_PAR_COLLISION
+
+    def is_hitting(self, pos):
+        """Renvoie True si la position donnée touche cette planète."""
+        x, y = self.position
+        dx = pos[0] - x
+        dy = pos[1] - y
+        distance = math.hypot(dx, dy)
+        return distance < self.taille
