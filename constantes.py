@@ -1,3 +1,5 @@
+from enum import Enum
+
 from models.button import Button
 
 FPS = 120
@@ -7,7 +9,7 @@ ARRIERE_PLAN = (42, 17, 51)
 
 SIMULATION_SPEED = 1.0
 
-CONSTANTE_GRAVITATION = 1.0
+CONSTANTE_GRAVITATION = 1e5 / 1.989e27  # G·M_étoile = 1e5 : vitesses orbitales en px/s lisibles
 ACCELERATION_MAXIMALE = 1000
 MILLISECONDES_PAR_SECONDE = 1000
 MASSE_TRANSFEREE_PAR_COLLISION = 500
@@ -24,13 +26,15 @@ TAILLE_TROU_NOIR = 20
 COULEUR_TROU_NOIR = (0, 0, 0)
 COULEUR_NOUVELLE_PLANETE = (255, 255, 255)
 
-MASSE_ETOILE = 100000
+MASSE_ETOILE = 1_989_000_000_000_000_000_000_000_000
 TAILLE_ETOILE = 20
 COULEUR_ETOILE = (255, 220, 120)
 FACTEUR_ECHELLE_ORBITALE = 0.45
 MULTIPLICATEUR_DISTANCE_ORBITALE = 0.5
 PAS_ANGLE_ORBITAL = 0.55
 MASSE_LUNE = 1
+OMEGA_LUNE_REFERENCE = 1.0  # rad/s pour une lune à RAYON_LUNE_REFERENCE de son parent
+RAYON_LUNE_REFERENCE = 50
 
 PLANETES_INITIALES = (
     ("Mercure", 0.387, 4, 0.0166, (170, 165, 155)),
@@ -55,6 +59,14 @@ MENU_WIDTH = 300
 MENU_HEIGHT = WINDOWHEIGHT
 
 
+class State(Enum):
+    PLAY = 0
+    PAUSE = 1
+    INSPECT_MENU = 2
+    PLACE_PREVIEW = 3
+    ASK_FOR = 4
+
+
 BUTTONS = [
-    Button("Nouvelle planète", (0, 0), 250, 40, action=None)
+    Button("Mettre en orbite", (20, WINDOWHEIGHT - 40 - 20), 250, 40, action=("mettre_en_orbite"), show_state=State.INSPECT_MENU)
 ]

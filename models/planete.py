@@ -7,9 +7,12 @@ import constantes as const
 
 class Planete:
 
-    def __init__(self, taille, vitesse_init, dir_init, masse,
+    def __init__(self, nom, taille, vitesse_init, dir_init, masse,
                  v_angulaire, couleur, trace=True, phase=0,
                  position_init=(0, 0)):
+
+        self.nom = nom
+
         self.taille = taille
         self.masse = masse
         self.vitesse = vitesse_init
@@ -25,6 +28,41 @@ class Planete:
         self.v_angulaire = v_angulaire
         self.angle = phase
         self.trace = trace
+
+        # Satellite : orbite calculée relativement à son parent
+        self.parent = None
+        self.rayon_orbite = 0
+        self.angle_orbite = 0
+        self.omega = 0
+
+    def met_en_orbite(self, parent, rayon, angle, omega):
+        """Fait de cette planète un satellite de `parent` (orbite circulaire)."""
+        self.parent = parent
+        self.rayon_orbite = rayon
+        self.angle_orbite = angle
+        self.omega = omega
+        self.position = self.position_satellite()
+
+    def position_satellite(self):
+        return (self.parent.position[0] + self.rayon_orbite * math.cos(self.angle_orbite),
+                self.parent.position[1] + self.rayon_orbite * math.sin(self.angle_orbite))
+
+    def avance_satellite(self, dt):
+        """Fait tourner le satellite autour de son parent (dt en ms)."""
+        self.angle_orbite += self.omega * dt / const.MILLISECONDES_PAR_SECONDE
+        self.position = self.position_satellite()
+
+    def detache(self):
+        """Libère le satellite avec la vitesse qu'il avait au moment du détachement."""
+        v_rel = self.omega * self.rayon_orbite
+        tangente = self.angle_orbite + math.pi / 2
+        vx = (self.parent.vitesse * math.cos(self.parent.dir)
+              + v_rel * math.cos(tangente))
+        vy = (self.parent.vitesse * math.sin(self.parent.dir)
+              + v_rel * math.sin(tangente))
+        self.vitesse = math.hypot(vx, vy)
+        self.dir = math.atan2(vy, vx)
+        self.parent = None
 
     def calcule_pos(self, liste_planetes=None, dt=0):
         if not liste_planetes or dt <= 0:
@@ -100,7 +138,7 @@ class Planete:
                 self.masse += const.MASSE_TRANSFEREE_PAR_COLLISION
                 autre.masse -= const.MASSE_TRANSFEREE_PAR_COLLISION
 
-    def is_hitting(self, pos):
+    def is_touching_pos(self, pos):
         """Renvoie True si la position donnée touche cette planète."""
         x, y = self.position
         dx = pos[0] - x
