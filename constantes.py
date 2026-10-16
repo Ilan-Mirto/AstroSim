@@ -67,6 +67,10 @@ class State(Enum):
     ASK_FOR = 4
 
 
+from modules.camera import Camera
+
+CAMERA = Camera()
+
 BUTTONS = [
     Button("Mettre en orbite", (20, WINDOWHEIGHT - 40 - 20), 250, 40, action=("mettre_en_orbite"), show_state=State.INSPECT_MENU)
 ]

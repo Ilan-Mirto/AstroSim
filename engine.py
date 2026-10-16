@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import math
+from modules.camera import Camera
 
 import pygame
 
@@ -8,6 +8,7 @@ import constantes as const
 from models.planete import Planete
 import ux_manager as ux
 from models.button import Button
+import math
 
 
 class GameEngine:
@@ -28,14 +29,21 @@ class GameEngine:
         self.ask_callback = None
         self.placement_pos = None
 
+        self.camera = const.CAMERA
+
     @staticmethod
     def is_quit_event(event):
         return (event.type == pygame.QUIT or
                 (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE))
 
     def handle_key(self, event):
-        if event.key == pygame.K_m and self.state == self.State.PLAY and self.selected_index is not None:
-            self.state = self.State.INSPECT_MENU
+        if self.state == self.State.PLAY:
+            if event.key == pygame.K_m and self.selected_index is not None:
+                self.state = self.State.INSPECT_MENU
+
+            print("Camera position:", self.camera.get_position())
+
+
         elif event.key == pygame.K_m and self.state == self.State.INSPECT_MENU:
             self.state = self.State.PLAY
 
@@ -101,7 +109,8 @@ class GameEngine:
                 return
 
         if self.state == self.State.PLACE_PREVIEW:
-            self.placement_pos = pos
+            cam_x, cam_y = self.camera.get_position()
+            self.placement_pos = (pos[0] + cam_x, pos[1] + cam_y)
             self.ask_for_str("Nom de la planète : ", self.place_planet_in_orbit)
             return
 
@@ -124,10 +133,17 @@ class GameEngine:
                 self.handle_key(event)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 self.handle_click(event)
+            self.slide_cam_with_mouse(event)
 
     def perform_action(self, action):
         if action == "mettre_en_orbite":
             self.state = self.State.PLACE_PREVIEW
+
+    def slide_cam_with_mouse(self, event):
+        if event.type == pygame.MOUSEMOTION and (self.state == self.State.PLAY or self.state == self.State.INSPECT_MENU):
+            if pygame.mouse.get_pressed()[0]:  # Si le bouton gauche de la souris est enfoncé
+                rel = event.rel
+                self.camera.move(-rel[0], -rel[1])
 
     @staticmethod
     def cree_orbite(nom, centre, masse_etoile, rayon, angle, taille, masse, couleur):
@@ -230,6 +246,9 @@ class GameEngine:
 
         interface.close()
 
+    def slide_camera(self, dx, dy):
+        self.cam_x += dx
+        self.cam_y += dy
 
 def main():
     GameEngine().run()

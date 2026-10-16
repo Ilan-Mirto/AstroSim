@@ -2,14 +2,18 @@ import constantes as const
 import pygame
 import pygame
 import math
+from modules.camera import Camera
 
 class UXManager:
+    
     def __init__(self):
         self.ecran = None
         self.surface_persistante = None
         self.surface_temporaire = None
         self.fps_clock = None
         self.engine = None
+        self.position_camera_precedente = None
+        self.camera = const.CAMERA
 
     def initialize(self):
         pygame.init()
@@ -24,11 +28,15 @@ class UXManager:
         self.surface_temporaire = pygame.Surface(
             (largeur, hauteur), pygame.SRCALPHA
         )
+        self.position_camera_precedente = self.camera.get_position()
         self.ecran.fill(const.ARRIERE_PLAN)
         return largeur / 2, hauteur / 2
 
     def render(self):
         State = const.State
+        position_camera = self.engine.camera.get_position()
+        self.position_camera_precedente = position_camera
+        self.surface_persistante.fill((0, 0, 0, 0))
         self.surface_temporaire.fill((0, 0, 0, 0))
 
         if self.engine.state in (State.PLAY, State.INSPECT_MENU, State.PLACE_PREVIEW, State.ASK_FOR):
@@ -102,8 +110,9 @@ class UXManager:
 
             pos_x = astre.position[0]
             pos_y = astre.position[1]
+            cam_x, cam_y = self.camera.get_position()
 
-            pygame.draw.circle(s_temp, (255, 255, 255), (int(pos_x), int(pos_y)), int(astre.taille) + 5, 2)
+            pygame.draw.circle(s_temp, (255, 255, 255), (int(pos_x - cam_x), int(pos_y - cam_y)), int(astre.taille) + 5, 2)
 
     def render_place_preview(self, ecran):
         """
@@ -122,9 +131,11 @@ class UXManager:
         astre_y = astre_selectionne.position[1]
 
         # Dessiner l'aperçu ici (par exemple, un cercle suivant la position de la souris)
+        cam_x, cam_y = self.camera.get_position()
         mouse_x, mouse_y = pygame.mouse.get_pos()
         pygame.draw.circle(ecran, (200, 200, 200), (mouse_x, mouse_y), 20)
-        pygame.draw.circle(ecran, (200, 200, 200), (astre_x, astre_y), int(math.hypot(mouse_x - astre_x, mouse_y - astre_y)), 2)
+        rayon = int(math.hypot(mouse_x + cam_x - astre_x, mouse_y + cam_y - astre_y))
+        pygame.draw.circle(ecran, (200, 200, 200), (int(astre_x - cam_x), int(astre_y - cam_y)), rayon, 2)
 
     def render_ask_for(self, ecran):
         question = self.engine.ask_question

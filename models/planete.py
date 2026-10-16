@@ -5,6 +5,9 @@ import pygame
 import constantes as const
 
 
+from modules.camera import Camera
+
+
 class Planete:
 
     def __init__(self, nom, taille, vitesse_init, dir_init, masse,
@@ -18,7 +21,7 @@ class Planete:
         self.vitesse = vitesse_init
         self.dir = dir_init if dir_init is not None else 0
         self.position = position_init
-
+        self.camera = const.CAMERA
         if isinstance(couleur, pygame.Color):
             self.couleur = couleur
         elif isinstance(couleur, (list, tuple)):
@@ -28,6 +31,7 @@ class Planete:
         self.v_angulaire = v_angulaire
         self.angle = phase
         self.trace = trace
+        self.points_trace = []
 
         # Satellite : orbite calculée relativement à son parent
         self.parent = None
@@ -42,6 +46,7 @@ class Planete:
         self.angle_orbite = angle
         self.omega = omega
         self.position = self.position_satellite()
+        
 
     def position_satellite(self):
         return (self.parent.position[0] + self.rayon_orbite * math.cos(self.angle_orbite),
@@ -109,10 +114,19 @@ class Planete:
 
     def render(self, s_persistante, s_temp):
         x, y = self.calcule_pos()
-        pygame.draw.circle(s_temp, self.couleur, (int(x), int(y)), self.taille)
+        cam_x, cam_y = self.camera.get_position()
+        pygame.draw.circle(s_temp, self.couleur, (int(x) - int(cam_x), int(y) - int(cam_y)), self.taille)
         if self.trace:
-            pygame.draw.circle(s_persistante, self.couleur, (int(x), int(y)),
-                               const.RAYON_TRACE)
+            point = (int(x), int(y))
+            if not self.points_trace or self.points_trace[-1] != point:
+                self.points_trace.append(point)
+            largeur, hauteur = s_persistante.get_size()
+            marge = const.RAYON_TRACE
+            ox, oy = int(cam_x), int(cam_y)
+            for px, py in self.points_trace:
+                sx, sy = px - ox, py - oy
+                if -marge <= sx <= largeur + marge and -marge <= sy <= hauteur + marge:
+                    pygame.draw.circle(s_persistante, self.couleur, (sx, sy), marge)
 
     def avance(self, dt, liste_planetes=None):
         self.position = self.calcule_pos(liste_planetes or [self], dt)
@@ -140,8 +154,10 @@ class Planete:
 
     def is_touching_pos(self, pos):
         """Renvoie True si la position donnée touche cette planète."""
+        cam_pos = self.camera.get_position()
+
         x, y = self.position
-        dx = pos[0] - x
-        dy = pos[1] - y
+        dx = pos[0] - x + cam_pos[0]
+        dy = pos[1] - y + cam_pos[1]
         distance = math.hypot(dx, dy)
         return distance < self.taille
